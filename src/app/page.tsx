@@ -20,6 +20,7 @@ import tree1 from "@/assets/tree-1.jpg";
 import tree2 from "@/assets/tree-2.jpg";
 import tree3 from "@/assets/tree-3.jpg";
 import { UserModal } from "@/components/Usermodal";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const [activeModal, setActiveModal] = useState<
@@ -142,6 +143,11 @@ export default function Home() {
     pending: { title: "Pending Trees", trees: pendingTrees },
     rejected: { title: "Rejected Trees", trees: rejectedTrees },
     approved: { title: "Approved Trees", trees: approvedTrees },
+  };
+  const router = useRouter();
+
+  const handleCameraClick = () => {
+    router.push("/capture");
   };
 
   return (
@@ -324,7 +330,7 @@ export default function Home() {
           {/* Bottom Menu */}
           <div className="relative mt-6 mb-0">
             <div className="absolute -top-5 left-1/2 -translate-x-1/2">
-              <button className="cursor-pointer">
+              <button className="cursor-pointer" onClick={()=> handleCameraClick()}>
                 <Image
                   className="relative"
                   src={ellipse}
