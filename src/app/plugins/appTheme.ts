@@ -31,6 +31,7 @@ export const appTheme = {
     lightWhiteSmoke: '#c7aa94',
     mintGreen: '#9FEBCE',
     borderColor: '#647273',
-    lightBlack: '#666666'
+    lightBlack: '#666666',
+    brownishTan: '#cbb29e',
   },
 };
