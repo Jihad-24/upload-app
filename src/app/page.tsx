@@ -19,11 +19,13 @@ import { PlantedTreesModal } from "@/components/PlantedTreesModal";
 import tree1 from "@/assets/tree-1.jpg";
 import tree2 from "@/assets/tree-2.jpg";
 import tree3 from "@/assets/tree-3.jpg";
+import { UserModal } from "@/components/Usermodal";
 
 export default function Home() {
   const [activeModal, setActiveModal] = useState<
     null | "planted" | "pending" | "rejected" | "approved"
   >(null);
+  const [activeUserModal, setActiveUserModal] = useState(false);
 
   const plantedTrees = [
     {
@@ -344,7 +346,10 @@ export default function Home() {
               <button className="cursor-pointer">
                 <Image src={home} alt="Home" width={26} height={26} />
               </button>
-              <button className="cursor-pointer">
+              <button
+                className="cursor-pointer"
+                onClick={() => setActiveUserModal(true)}
+              >
                 <Image src={userIcon} alt="Profile" width={19} height={19} />
               </button>
             </div>
@@ -359,6 +364,9 @@ export default function Home() {
           trees={modalData[activeModal].trees}
           onClose={() => setActiveModal(null)}
         />
+      )}
+      {activeUserModal && (
+        <UserModal onClose={() => setActiveUserModal(false)} />
       )}
     </div>
   );
