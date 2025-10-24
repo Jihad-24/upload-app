@@ -15,6 +15,7 @@ import { appTheme } from "../plugins/appTheme";
 import tree1 from "@/assets/tree-1.jpg";
 import tree2 from "@/assets/tree-2.jpg";
 import tree3 from "@/assets/tree-3.jpg";
+import { DetailsHeader } from "@/components/DetailsHeader";
 
 type CapturedImage = {
   image: string;
@@ -48,7 +49,7 @@ export const Capture: React.FC = () => {
     null
   );
   const [searchQuery, setSearchQuery] = useState("");
-
+  const [isAsc, setIsAsc] = useState(true);
   const trees: Tree[] = [
     { id: 1, name: "Oak", image: tree1 },
     { id: 2, name: "Pine", image: tree2 },
@@ -96,7 +97,9 @@ export const Capture: React.FC = () => {
     if (player && stream) {
       player.srcObject = stream;
       player.onloadedmetadata = () => {
-        player.play().catch((err) => console.error("Error playing video:", err));
+        player
+          .play()
+          .catch((err) => console.error("Error playing video:", err));
       };
     }
     return () => {
@@ -152,6 +155,9 @@ export const Capture: React.FC = () => {
   const handleKeep = () => {
     setIsTreeSelectModal(true);
   };
+  const sortedTrees = [...filteredTrees].sort((a, b) =>
+    isAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+  );
 
   return (
     <div className="fixed inset-0 flex items-start justify-center z-50 bg-black/70">
@@ -239,7 +245,11 @@ export const Capture: React.FC = () => {
                 onClick={handleRetake}
               >
                 <div className="flex flex-row items-center justify-center gap-4">
-                  <Image src={retake} alt="Retake" className="w-[1.3rem] h-[1.3rem]" />
+                  <Image
+                    src={retake}
+                    alt="Retake"
+                    className="w-[1.3rem] h-[1.3rem]"
+                  />
                   Retake
                 </div>
               </button>
@@ -253,7 +263,11 @@ export const Capture: React.FC = () => {
                 onClick={handleKeep}
               >
                 <div className="flex flex-row items-center justify-center gap-4">
-                  <Image src={keep} alt="Keep" className="w-[0.9rem] h-[1.3rem]" />
+                  <Image
+                    src={keep}
+                    alt="Keep"
+                    className="w-[0.9rem] h-[1.3rem]"
+                  />
                   Keep
                 </div>
               </button>
@@ -266,15 +280,29 @@ export const Capture: React.FC = () => {
       {isTreeSelectModal && (
         <div className="fixed inset-0 flex items-end justify-center z-50 bg-black/40">
           <div className="w-full max-w-md bg-white rounded-t-3xl p-6 max-h-[80%] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Select a Tree</h2>
-            <input
-              type="text"
-              placeholder="Search tree..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full p-3 border rounded-md mb-4"
+            <DetailsHeader
+              title={"Select Species"}
+              onClose={() => setIsTreeSelectModal(false)}
+              draggable
             />
-            {filteredTrees.map((tree) => (
+            <div className="flex items-start flex-col justify-between mb-4">
+              <input
+                type="text"
+                placeholder="Search tree..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full p-3 border rounded-md"
+              />
+              <div className="">
+                <button
+                  onClick={() => setIsAsc(!isAsc)}
+                  className="ml-2 px-5 py-3 bg-gray-200 rounded-full text-sm font-semibold mt-3 flex items-center justify-center"
+                >
+                  {isAsc ? "▲" : "▼"} {isAsc ? "Sort" : "Sort"}
+                </button>
+              </div>
+            </div>
+            {sortedTrees.map((tree) => (
               <div
                 key={tree.id}
                 onClick={() => setSelectedTreeId(tree.id)}
@@ -287,6 +315,7 @@ export const Capture: React.FC = () => {
                 {tree.name}
               </div>
             ))}
+
             <button
               disabled={!selectedTreeId}
               onClick={() => {
@@ -305,55 +334,123 @@ export const Capture: React.FC = () => {
         </div>
       )}
 
-      {/* Step 2 Modal (Location) */}
+      {/* Step 2 Modal */}
       {isStep2Modal && (
         <div className="fixed inset-0 flex items-end justify-center z-50 bg-black/40">
-          <div className="w-full max-w-md bg-white rounded-t-3xl p-6 max-h-[80%] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Set Location</h2>
-            <button
-              onClick={() => {
-                navigator.geolocation.getCurrentPosition(
-                  (pos) =>
-                    setLocation({
-                      lat: pos.coords.latitude,
-                      lon: pos.coords.longitude,
-                    }),
-                  (err) => console.warn(err)
-                );
-              }}
-              className="w-full py-3 mb-4 rounded-lg bg-green-600 text-white font-semibold"
-            >
-              Auto Detect Location
-            </button>
-
-            <input
-              type="text"
-              placeholder="Latitude"
-              value={location?.lat ?? ""}
-              onChange={(e) =>
-                setLocation((prev) => ({ ...prev!, lat: Number(e.target.value) }))
-              }
-              className="w-full p-3 mb-2 border rounded-md"
-            />
-            <input
-              type="text"
-              placeholder="Longitude"
-              value={location?.lon ?? ""}
-              onChange={(e) =>
-                setLocation((prev) => ({ ...prev!, lon: Number(e.target.value) }))
-              }
-              className="w-full p-3 mb-2 border rounded-md"
+          <div className="w-full max-w-md bg-white rounded-t-3xl p-6 max-h-[90%] overflow-y-auto">
+            <DetailsHeader
+              title={"Location"}
+              onClose={() => setIsStep2Modal(false)}
+              draggable
             />
 
+            {/* Selected Species */}
+            <div className="mb-4 bg-gray-100 p-3 rounded-lg">
+              <label className="text-sm font-bold">Selected Species:</label>
+              <p className="mt-1">
+                {trees.find((t) => t.id === selectedTreeId)?.name || "None"}
+              </p>
+            </div>
+
+            {/* Country Selector */}
+            <div className="mb-4">
+              <label className="text-sm font-medium">Select Country *</label>
+              <select className="w-full p-3 border rounded-md bg-gray-100">
+                <option value="">Select a country...</option>
+                <option value="Bangladesh">Bangladesh</option>
+                <option value="India">India</option>
+                <option value="USA">USA</option>
+                {/* Add more countries */}
+              </select>
+            </div>
+
+            {/* Organization Selector */}
+            <div className="mb-4">
+              <label className="text-sm font-medium">
+                Select Organization *
+              </label>
+              <select className="w-full p-3 border rounded-md bg-gray-100">
+                <option value="">Select an organization...</option>
+                <option value="Org1">Org1</option>
+                <option value="Org2">Org2</option>
+              </select>
+            </div>
+
+            {/* Location */}
+            {/* Location */}
+            <div className="mb-4">
+              <p className="text-sm mb-1">
+                We have detected your current location is ({location?.lat ?? ""}
+                , {location?.lon ?? ""})
+              </p>
+              <label className="text-sm font-medium">
+                Confirm/Edit Location Coordinates (lat, lon)
+              </label>
+              <input
+                type="text"
+                placeholder="Latitude, Longitude"
+                value={location ? `${location.lat}, ${location.lon}` : ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const [latStr, lonStr] = value
+                    .split(",")
+                    .map((s) => s.trim());
+                  const lat = Number(latStr);
+                  const lon = Number(lonStr);
+
+                  // Validate latitude and longitude
+                  const isValidLat = !isNaN(lat) && lat >= -90 && lat <= 90;
+                  const isValidLon = !isNaN(lon) && lon >= -180 && lon <= 180;
+
+                  if (isValidLat && isValidLon) {
+                    setLocation({ lat, lon });
+                  }
+                }}
+                className={`w-full p-3 border rounded-md mt-1 ${
+                  location ? "" : "border-red-500"
+                }`}
+              />
+              {location &&
+                (location.lat < -90 ||
+                  location.lat > 90 ||
+                  location.lon < -180 ||
+                  location.lon > 180) && (
+                  <p className="text-red-500 text-sm mt-1">
+                    Invalid coordinates. Latitude must be -90 to 90, longitude
+                    -180 to 180.
+                  </p>
+                )}
+              <button
+                onClick={() =>
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) =>
+                      setLocation({
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                      }),
+                    (err) => console.warn(err)
+                  )
+                }
+                className="mt-2 w-full py-2 rounded-lg bg-gray-200 text-black font-medium"
+              >
+                Change Location
+              </button>
+            </div>
+
+            {/* Create Tree Button */}
             <button
               onClick={() => {
-                console.log("Final tree & location:", selectedTreeId, location);
+                console.log("Create tree with", {
+                  tree: selectedTreeId,
+                  location,
+                  // country, organization can be grabbed from refs or state
+                });
                 setIsStep2Modal(false);
                 router.push("/"); // or next step
               }}
               className="w-full py-3 mt-4 rounded-3xl bg-green-700 text-white font-semibold"
             >
-              Save & Continue
+              Create Tree
             </button>
           </div>
         </div>
