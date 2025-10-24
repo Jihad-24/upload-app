@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Image, { StaticImageData } from "next/image";
 import logo from "@/assets/logo.svg";
 import close from "@/assets/close-white.svg";
 import keep from "@/assets/keep.svg";
@@ -9,13 +10,23 @@ import retake from "@/assets/retake.svg";
 import ellipse from "@/assets/light-ellipse.svg";
 import { Camera } from "@/components/Camera";
 import { appTheme } from "../plugins/appTheme";
-import Image from "next/image";
+
+// Dummy trees for selection
+import tree1 from "@/assets/tree-1.jpg";
+import tree2 from "@/assets/tree-2.jpg";
+import tree3 from "@/assets/tree-3.jpg";
 
 type CapturedImage = {
   image: string;
   captured_at: string;
   latitude?: string;
   longitude?: string;
+};
+
+type Tree = {
+  id: number;
+  name: string;
+  image: StaticImageData;
 };
 
 export const Capture: React.FC = () => {
@@ -30,9 +41,27 @@ export const Capture: React.FC = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
 
+  const [isTreeSelectModal, setIsTreeSelectModal] = useState(false);
+  const [isStep2Modal, setIsStep2Modal] = useState(false);
+  const [selectedTreeId, setSelectedTreeId] = useState<number | null>(null);
+  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(
+    null
+  );
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const trees: Tree[] = [
+    { id: 1, name: "Oak", image: tree1 },
+    { id: 2, name: "Pine", image: tree2 },
+    { id: 3, name: "Maple", image: tree3 },
+  ];
+
+  const filteredTrees = trees.filter((tree) =>
+    tree.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const playerRef = useRef<HTMLVideoElement>(null);
 
-  // Open camera on mount if on /capture
+  // Open camera on mount
   useEffect(() => {
     if (pathname === "/capture") openCamera();
     return () => stopCamera();
@@ -67,9 +96,7 @@ export const Capture: React.FC = () => {
     if (player && stream) {
       player.srcObject = stream;
       player.onloadedmetadata = () => {
-        player
-          .play()
-          .catch((err) => console.error("Error playing video:", err));
+        player.play().catch((err) => console.error("Error playing video:", err));
       };
     }
     return () => {
@@ -123,12 +150,11 @@ export const Capture: React.FC = () => {
   };
 
   const handleKeep = () => {
-    console.log("Saved image:", tmpImage);
-    router.push("/");
+    setIsTreeSelectModal(true);
   };
 
   return (
-    <div className="fixed inset-0 flex items-start justify-center z-50">
+    <div className="fixed inset-0 flex items-start justify-center z-50 bg-black/70">
       <div
         className="max-w-md w-full h-full relative flex flex-col"
         style={{ backgroundColor: appTheme.secondaryPalette.darkTealGreen }}
@@ -144,7 +170,7 @@ export const Capture: React.FC = () => {
           />
         </div>
 
-        {/* Main camera area */}
+        {/* Camera Area */}
         <div className="flex-grow flex items-center justify-center p-4 relative">
           {!isPreview && (
             <div className="relative w-[90%] h-[80%]">
@@ -213,11 +239,7 @@ export const Capture: React.FC = () => {
                 onClick={handleRetake}
               >
                 <div className="flex flex-row items-center justify-center gap-4">
-                  <Image
-                    src={retake}
-                    alt="Retake"
-                    className="w-[1.3rem] h-[1.3rem]"
-                  />
+                  <Image src={retake} alt="Retake" className="w-[1.3rem] h-[1.3rem]" />
                   Retake
                 </div>
               </button>
@@ -231,11 +253,7 @@ export const Capture: React.FC = () => {
                 onClick={handleKeep}
               >
                 <div className="flex flex-row items-center justify-center gap-4">
-                  <Image
-                    src={keep}
-                    alt="Keep"
-                    className="w-[0.9rem] h-[1.3rem]"
-                  />
+                  <Image src={keep} alt="Keep" className="w-[0.9rem] h-[1.3rem]" />
                   Keep
                 </div>
               </button>
@@ -243,6 +261,103 @@ export const Capture: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Tree Selection Modal */}
+      {isTreeSelectModal && (
+        <div className="fixed inset-0 flex items-end justify-center z-50 bg-black/40">
+          <div className="w-full max-w-md bg-white rounded-t-3xl p-6 max-h-[80%] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">Select a Tree</h2>
+            <input
+              type="text"
+              placeholder="Search tree..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full p-3 border rounded-md mb-4"
+            />
+            {filteredTrees.map((tree) => (
+              <div
+                key={tree.id}
+                onClick={() => setSelectedTreeId(tree.id)}
+                className={`p-3 rounded-md mb-2 cursor-pointer border ${
+                  selectedTreeId === tree.id
+                    ? "bg-green-100 border-green-400"
+                    : "bg-gray-50"
+                }`}
+              >
+                {tree.name}
+              </div>
+            ))}
+            <button
+              disabled={!selectedTreeId}
+              onClick={() => {
+                setIsTreeSelectModal(false);
+                setIsStep2Modal(true);
+              }}
+              className={`w-full py-3 mt-4 rounded-3xl text-white font-semibold ${
+                selectedTreeId
+                  ? "bg-green-700 hover:bg-green-800"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2 Modal (Location) */}
+      {isStep2Modal && (
+        <div className="fixed inset-0 flex items-end justify-center z-50 bg-black/40">
+          <div className="w-full max-w-md bg-white rounded-t-3xl p-6 max-h-[80%] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">Set Location</h2>
+            <button
+              onClick={() => {
+                navigator.geolocation.getCurrentPosition(
+                  (pos) =>
+                    setLocation({
+                      lat: pos.coords.latitude,
+                      lon: pos.coords.longitude,
+                    }),
+                  (err) => console.warn(err)
+                );
+              }}
+              className="w-full py-3 mb-4 rounded-lg bg-green-600 text-white font-semibold"
+            >
+              Auto Detect Location
+            </button>
+
+            <input
+              type="text"
+              placeholder="Latitude"
+              value={location?.lat ?? ""}
+              onChange={(e) =>
+                setLocation((prev) => ({ ...prev!, lat: Number(e.target.value) }))
+              }
+              className="w-full p-3 mb-2 border rounded-md"
+            />
+            <input
+              type="text"
+              placeholder="Longitude"
+              value={location?.lon ?? ""}
+              onChange={(e) =>
+                setLocation((prev) => ({ ...prev!, lon: Number(e.target.value) }))
+              }
+              className="w-full p-3 mb-2 border rounded-md"
+            />
+
+            <button
+              onClick={() => {
+                console.log("Final tree & location:", selectedTreeId, location);
+                setIsStep2Modal(false);
+                router.push("/"); // or next step
+              }}
+              className="w-full py-3 mt-4 rounded-3xl bg-green-700 text-white font-semibold"
+            >
+              Save & Continue
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
