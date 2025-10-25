@@ -329,7 +329,7 @@ export default function Home() {
           </div>
           {/* Bottom Menu */}
           <div className="relative mt-6 mb-0">
-            <div className="absolute -top-5 left-1/2 -translate-x-1/2">
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2">
               <button className="cursor-pointer" onClick={()=> handleCameraClick()}>
                 <Image
                   className="relative"
